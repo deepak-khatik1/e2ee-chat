@@ -355,7 +355,7 @@ export default function App() {
               Send
             </button>
           </div>
-          <p className="text-xs text-gray-500 mt-2">
+          <p className="text-xs text-gray-500 mt-2 text-center">
             Messages are end-to-end encrypted 🔒
           </p>
         </div>
