@@ -11,7 +11,8 @@ export default defineConfig({
     react(),
     tailwindcss()
   ],
-  server: { 
-    port: process.env.VITE_PORT || 3000 
+  server: {
+    host: true,
+    port: process.env.VITE_PORT || 3000
   },
 })
