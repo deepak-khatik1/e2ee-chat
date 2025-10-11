@@ -241,7 +241,7 @@ export default function App() {
                     <div
                       key={u.userId}
                       onClick={() => selectPeer(u)}
-                      className={`px-3 py-2 rounded-lg cursor-pointer mb-1 transition ${
+                      className={`px-3 py-2 rounded-lg cursor-pointer mb-1 transition truncate ${
                         u.userId === peerId
                           ? 'bg-purple-600 text-white'
                           : 'hover:bg-gray-700'
@@ -335,7 +335,7 @@ export default function App() {
             )}
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex gap-2 flex-col sm:flex-row items-stretch sm:items-center max-w-full overflow-hidden p-1 rounded-lg">
             <input
               type="text"
               className="flex-1 bg-gray-900 border border-gray-700 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
