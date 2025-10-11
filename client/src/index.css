@@ -1,0 +1,23 @@
+@import "tailwindcss";
+
+/* For WebKit browsers (Chrome, Edge, Safari) */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+  background-color: #1f2937; /* Dark background, matching dark mode */
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: #4c51bf; /* Purple-ish thumb */
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: #667eea; /* Slightly lighter on hover */
+}
+
+/* For Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #4c51bf #1f2937;
+}
