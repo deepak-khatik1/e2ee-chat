@@ -33,10 +33,26 @@ export default function App() {
 
   const [activeUsers, setActiveUsers] = useState([])
 
+  // Chat box reference for auto-scrolling
+  const chatBoxRef = useRef(null)
+
+  // Auto-scroll effect
+  useEffect(() => {
+    if (chatBoxRef.current) {
+      chatBoxRef.current.scrollTop = chatBoxRef.current.scrollHeight
+    }
+  }, [chatLog]) // Trigger when chat log changes
+
+  // Update the page title with the current username
+  useEffect(() => {
+    document.title = userId ? `SecureChat - ${userId}` : 'SecureChat'
+  }, [userId]) // Update when userId changes
+
   useEffect(() => {
     socket.on('your_id', (id) => {
       if (!isRegistered) {
         setUserId(id)
+        alert(`Your user ID is ${id}`)
       }
     })
 
@@ -194,13 +210,12 @@ export default function App() {
           <h2 className="text-xl font-semibold text-purple-400 mb-4">
             Your Account
           </h2>
-          <label className="block text-sm text-gray-300 mb-1">User ID</label>
+          <label className="block text-sm text-gray-300 mb-1">Username</label>
           <input
             type="text"
             className="w-full bg-gray-900 border border-gray-600 rounded-lg p-2 mb-3 focus:outline-none focus:ring-2 focus:ring-purple-500"
-            value={userId}
             onChange={(e) => setUserId(e.target.value)}
-            placeholder="Enter your ID"
+            placeholder="Enter your name"
             readOnly={isRegistered}
           />
           <button
@@ -231,9 +246,12 @@ export default function App() {
           </div>
 
           <div className="mt-5 border-t border-gray-700 pt-4">
-            <h3 className="text-lg text-cyan-400 mb-2 flex items-center gap-1">
+            <h3 className="inline-flex text-lg text-cyan-400 mb-2 items-center gap-1">
               Active Users
             </h3>
+            <span className="text-gray-300 text-xs ml-1">
+              (Click on a user to chat)
+            </span>
             <div className="h-48 overflow-y-auto bg-gray-900 rounded-lg p-2 border border-gray-700">
               {isRegistered ? (
                 activeUsers.length ? (
@@ -278,13 +296,13 @@ export default function App() {
           </h2>
 
           <label className="block text-sm text-gray-300 mb-1">
-            Peer User ID
+            Peer Username
           </label>
           <input
             className="w-full bg-gray-900 border border-gray-600 rounded-lg p-2 mb-3 focus:outline-none focus:ring-2 focus:ring-purple-500"
             value={peerId}
             onChange={(e) => setPeerId(e.target.value)}
-            placeholder="Enter peer ID"
+            readOnly={true}
           />
 
           <label className="block text-sm text-gray-300 mb-1">
@@ -300,8 +318,11 @@ export default function App() {
             <p className="text-red-500 text-xs mb-2">Invalid peer key format</p>
           )}
 
-          {/* Chat area */}
-          <div className="h-64 bg-gray-900 border border-gray-700 rounded-lg p-3 overflow-y-auto mb-3">
+          {/* Chat area with auto scroll */}
+          <div
+            ref={chatBoxRef}
+            className="h-64 bg-gray-900 border border-gray-700 rounded-lg p-3 overflow-y-auto mb-3"
+          >
             {chatLog.length === 0 ? (
               <p className="text-gray-500 text-center mt-10">
                 No messages yet — start a secure conversation.
