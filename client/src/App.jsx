@@ -36,6 +36,48 @@ export default function App() {
   // Chat box reference for auto-scrolling
   const chatBoxRef = useRef(null)
 
+  const [count, setCount] = useState(50)
+  const [apiReady, setApiReady] = useState(false)
+  useEffect(() => {
+    let interval
+    let cancelled = false
+
+    function updateCounter() {
+      const timer = setInterval(() => {
+        setCount((prev) => prev - 1)
+        if (count < 0) {
+          clearInterval(timer)
+          setCount(0)
+        }
+      }, 1000)
+    }
+
+    const checkHealth = async () => {
+      try {
+        const res = await fetch(
+          `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}`,
+          { cache: 'no-store' }
+        )
+
+        if (res.ok && !cancelled) {
+          setApiReady(true)
+          clearInterval(interval)
+        }
+      } catch {
+        // updateCounter()
+        // backend still sleeping → do nothing
+      }
+    }
+
+    checkHealth() // try immediately
+    interval = setInterval(checkHealth, 5000) // retry every 5s
+
+    return () => {
+      cancelled = true
+      clearInterval(interval)
+    }
+  }, [])
+
   // Auto-scroll effect
   useEffect(() => {
     if (chatBoxRef.current) {
@@ -52,7 +94,7 @@ export default function App() {
     socket.on('your_id', (id) => {
       if (!isRegistered) {
         setUserId(id)
-        alert(`Your user ID is ${id}`)
+        // alert(`Your user ID is ${id}`)
       }
     })
 
@@ -190,7 +232,17 @@ export default function App() {
     setPeerPublicKeyPem(user.publicKeyPem)
   }
 
-  return (
+  return !apiReady ? (
+    <div className="h-dvh w-full flex flex-col gap-2 justify-center items-center bg-gray-900 text-yellow-400 text-center px-5 text-md md:text-xl">
+      <p className="">
+        This app is hosted on a free server which may sleep due to inactivity.
+      </p>
+      <p className="">
+        Backend is waking up… please wait for {count} seconds
+        <span className="inline-block animate-spin ml-1">⏳</span>
+      </p>
+    </div>
+  ) : (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 text-gray-100 flex flex-col items-center p-6">
       <header className="mb-8 text-center">
         <h1 className="text-3xl font-bold text-white flex items-center justify-center gap-2">
