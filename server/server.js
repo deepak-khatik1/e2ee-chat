@@ -3,11 +3,18 @@
 const dotenv = require("dotenv");
 dotenv.config();
 
+const cors = require("cors");
 const express = require("express");
 const http = require("http");
 const socketIo = require("socket.io");
 
 const app = express();
+app.use(
+    cors({
+        origin: process.env.CORS_ORIGIN || "*",
+    })
+);
+
 const server = http.createServer(app);
 const io = socketIo(server, {
     cors: {
@@ -24,12 +31,16 @@ const activeUsers = new Map(); // userId => { socketId, publicKeyPem }
  */
 function broadcastUserList() {
     // Convert the map values to a list of user objects for the client
-    const usersForClient = Array.from(activeUsers.entries()).map(([userId, userData]) => ({
-        userId: userId,
-        publicKeyPem: userData.publicKeyPem,
-    }));
+    const usersForClient = Array.from(activeUsers.entries()).map(
+        ([userId, userData]) => ({
+            userId: userId,
+            publicKeyPem: userData.publicKeyPem,
+        })
+    );
     io.emit("update_users", usersForClient);
-    console.log(`Broadcasting updated user list. Total users: ${activeUsers.size}`);
+    console.log(
+        `Broadcasting updated user list. Total users: ${activeUsers.size}`
+    );
 }
 
 io.on("connection", (socket) => {
@@ -37,7 +48,7 @@ io.on("connection", (socket) => {
 
     // Send socket id to client on connection (might be used as temp userId)
     socket.emit("your_id", socket.id);
-    
+
     // Store the socket ID to userId mapping for easy lookup during disconnect
     let currentUserId = socket.id; // Start with socket.id as temp ID
 
@@ -46,20 +57,27 @@ io.on("connection", (socket) => {
         if (!userId || !publicKeyPem) return;
 
         // 1. Remove old entry if this socket was registered with a different ID before
-        if (currentUserId !== socket.id && activeUsers.has(currentUserId) && activeUsers.get(currentUserId).socketId === socket.id) {
+        if (
+            currentUserId !== socket.id &&
+            activeUsers.has(currentUserId) &&
+            activeUsers.get(currentUserId).socketId === socket.id
+        ) {
             activeUsers.delete(currentUserId);
         }
-        
+
         // 2. Update currentUserId tracker
         currentUserId = userId;
-        
+
         // 3. Register the new user/key
-        activeUsers.set(userId, { socketId: socket.id, publicKeyPem: publicKeyPem });
+        activeUsers.set(userId, {
+            socketId: socket.id,
+            publicKeyPem: publicKeyPem,
+        });
         console.log(`User registered: ${userId} with Socket ID: ${socket.id}`);
 
         // Confirm registration back to client
         socket.emit("your_registered_id", userId);
-        
+
         // 4. Broadcast the updated list
         broadcastUserList();
     });
@@ -70,23 +88,29 @@ io.on("connection", (socket) => {
         ({ toUserId, encryptedAESKey, encryptedMessage, iv }) => {
             // Find socket of recipient userId using the activeUsers map
             const recipientData = activeUsers.get(toUserId);
-            
+
             if (recipientData) {
-                const recipientSocket = io.sockets.sockets.get(recipientData.socketId);
-                
+                const recipientSocket = io.sockets.sockets.get(
+                    recipientData.socketId
+                );
+
                 if (recipientSocket) {
                     recipientSocket.emit("receive_message", {
                         // The server uses the registered userId, not the raw socket.id, as the fromUserId
-                        fromUserId: currentUserId, 
+                        fromUserId: currentUserId,
                         encryptedAESKey,
                         encryptedMessage,
                         iv,
                     });
                 } else {
-                     console.log(`Recipient socket not found for userId: ${toUserId}`);
+                    console.log(
+                        `Recipient socket not found for userId: ${toUserId}`
+                    );
                 }
             } else {
-                 console.log(`Recipient userId not found in activeUsers: ${toUserId}`);
+                console.log(
+                    `Recipient userId not found in activeUsers: ${toUserId}`
+                );
             }
         }
     );
@@ -95,7 +119,10 @@ io.on("connection", (socket) => {
         console.log("User disconnected:", socket.id);
 
         // Remove the user from the active list if they were registered
-        if (activeUsers.has(currentUserId) && activeUsers.get(currentUserId).socketId === socket.id) {
+        if (
+            activeUsers.has(currentUserId) &&
+            activeUsers.get(currentUserId).socketId === socket.id
+        ) {
             activeUsers.delete(currentUserId);
             // Broadcast the updated list
             broadcastUserList();
